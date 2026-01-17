@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Bag | Luxe Bites</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --red: #D32F2F; --white: #FFFFFF; --light: #F8F9FA; --text: #1A1A1A; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--light); color: var(--text); min-height: 100vh; padding-bottom: 120px; }
+
+        /* Header */
+        .cart-header { padding: 30px 20px; background: var(--white); text-align: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .cart-header h1 { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+
+        /* Cart Items */
+        .cart-container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .empty-state { text-align: center; padding: 50px 20px; display: none; }
+        .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
+
+        .cart-item { background: var(--white); border-radius: 20px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02); }
+        .cart-item img { width: 70px; height: 70px; border-radius: 15px; object-fit: cover; }
+        .item-details { flex: 1; }
+        .item-details h4 { font-size: 16px; margin-bottom: 4px; }
+        .item-details p { font-size: 12px; color: var(--red); font-weight: 600; margin-bottom: 4px; }
+        .preference-tag { font-size: 10px; background: rgba(211,47,47,0.1); color: var(--red); padding: 2px 8px; border-radius: 5px; display: inline-block; }
+
+        .qty-controls { display: flex; align-items: center; gap: 12px; background: var(--light); padding: 5px 10px; border-radius: 10px; }
+        .qty-btn { cursor: pointer; color: var(--text); font-weight: bold; }
+
+        /* Footer Checkout */
+        .checkout-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--white); padding: 20px; border-top: 1px solid rgba(0,0,0,0.05); box-shadow: 0 -10px 30px rgba(0,0,0,0.05); z-index: 100; }
+        .bill-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: 700; font-size: 18px; }
+        .btn-whatsapp { background: #25D366; color: white; width: 100%; padding: 18px; border: none; border-radius: 15px; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: 0.3s; text-decoration: none; }
+        .btn-whatsapp:active { transform: scale(0.98); }
+
+        /* Custom Professional Bottom Nav */
+        .nav-dock { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); width: 80%; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border-radius: 20px; display: flex; justify-content: space-around; padding: 10px; border: 1px solid rgba(211,47,47,0.1); }
+        .nav-item { color: #888; text-decoration: none; font-size: 10px; text-align: center; }
+        .nav-item.active { color: var(--red); }
+    </style>
+</head>
+<body>
+
+    <div class="cart-header">
+        <h1>Your <span style="color:var(--red)">Selection</span></h1>
+    </div>
+
+    <div class="cart-container" id="cartList">
+        </div>
+
+    <div class="empty-state" id="emptyCart">
+        <i class="fas fa-shopping-basket"></i>
+        <h3>Your bag is empty</h3>
+        <p style="color:#888; margin-top:10px;">Delicious items are waiting for you!</p>
+        <a href="menu.html" style="color:var(--red); text-decoration:none; font-weight:700; display:block; margin-top:20px;">Explore Menu</a>
+    </div>
+
+    <div class="checkout-footer" id="footer">
+        <div class="bill-row">
+            <span>Total amount</span>
+            <span id="totalBill">₹0</span>
+        </div>
+        <button class="btn-whatsapp" onclick="sendOrder()">
+            <i class="fab fa-whatsapp"></i> Confirm via WhatsApp
+        </button>
+    </div>
+
+    <script>
+        let cart = JSON.parse(localStorage.getItem('urbanCart')) || [];
+
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            const empty = document.getElementById('emptyCart');
+            const footer = document.getElementById('footer');
+            
+            if (cart.length === 0) {
+                list.style.display = 'none';
+                footer.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            list.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <img src="${item.image_url}" alt="${item.name}">
+                    <div class="item-details">
+                        <h4>${item.name}</h4>
+                        <p>₹${item.price}</p>
+                        <span class="preference-tag">${item.preference || 'Standard'}</span>
+                    </div>
+                    <div class="qty-controls">
+                        <span class="qty-btn" onclick="updateQty(${index}, -1)">-</span>
+                        <span style="font-weight:700">${item.qty}</span>
+                        <span class="qty-btn" onclick="updateQty(${index}, 1)">+</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            document.getElementById('totalBill').innerText = `₹${total}`;
+        }
+
+        function updateQty(index, change) {
+            cart[index].qty += change;
+            if (cart[index].qty < 1) cart.splice(index, 1);
+            localStorage.setItem('urbanCart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function sendOrder() {
+            const user = JSON.parse(localStorage.getItem('urbanUser')) || { name: "Valued Guest" };
+            let message = `*LUXE BITES - NEW ORDER*%0A%0A`;
+            message += `*Customer:* ${user.name}%0A`;
+            message += `----------------------------%0A`;
+            
+            let total = 0;
+            cart.forEach(item => {
+                const subtotal = item.price * item.qty;
+                message += `• *${item.name}* x ${item.qty}%0A`;
+                message += `  _Choice: ${item.preference || 'Standard'}_%0A`;
+                message += `  Price: ₹${subtotal}%0A%0A`;
+                total += subtotal;
+            });
+
+            message += `----------------------------%0A`;
+            message += `*Total Bill: ₹${total}*%0A%0A`;
+            message += `Please confirm my order. Thank you!`;
+
+            const whatsappUrl = `https://wa.me/918764696084?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        renderCart();
+    </script>
+</body>
+</html>
